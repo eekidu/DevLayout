@@ -4,10 +4,6 @@ import android.util.Log;
 
 public class FloatTransformer {
     private static final String TAG = "FloatTransformer";
-    /**
-     * TODO: 需求：使原本只能设置int的seekBar 支持 浮点数和负数 的 min,max,step
-     * 用一个转化的类来实现
-     */
 
     float minn = 0, maxx = 100, step = 1;
     static final int MIN_INT = 0;
