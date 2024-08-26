@@ -72,7 +72,7 @@ fun DevLayout.addViewHeightAdjust(targetView: View) {
         targetView.layoutParams.height
     }
     this.addSeekBar("高度调节") { height ->
-        targetView.layoutParams.height = height
+        targetView.layoutParams.height = height.toInt()
         targetView.layoutParams = targetView.layoutParams
     }.setMax(2 * viewHeight).setProgress(viewHeight)
 }

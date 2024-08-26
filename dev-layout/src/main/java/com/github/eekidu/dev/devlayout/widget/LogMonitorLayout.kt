@@ -421,7 +421,7 @@ class LogMonitorLayout @JvmOverloads constructor(
             devLayout.addLine()
             levelSeekBar = devLayout.addSeekBar("Level")
             levelSeekBar.setOnProgressChangeListener { progress ->
-                val level = progress + 2
+                val level = progress.toInt() + 2
                 levelSeekBar.valueTv.text = when (level) {
                     Log.VERBOSE -> "VERBOSE"
                     Log.DEBUG -> "DEBUG"

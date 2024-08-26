@@ -112,9 +112,17 @@ class MainActivity : AppCompatActivity() {
         mDevLayout.addSeekBar("参数设置2").apply {
             setEnableStep(true)//设置是否开启步进模式
             setOnProgressChangeListener { progress ->
-                this.valueTv.text = "${progress}dp"//自定义显示
+                this.valueTv.text = String.format("%.0fdp",progress)//自定义显示
             }
             setMax(100).setProgress(50)
+        }
+
+        mDevLayout.addSeekBar("参数设置3").apply {
+            setEnableStep(true)//设置是否开启步进模式
+            setOnProgressChangeListener { progress ->
+                this.valueTv.text = String.format("%.1fdp",progress)//自定义显示
+            }
+            setMax(12).setMin(-6).setStep(0.4f).setProgress(2.4f)   // 小数、负数
         }
 
 

@@ -19,6 +19,7 @@ import androidx.appcompat.widget.AppCompatTextView;
 import com.github.eekidu.dev.devlayout.DevLayout;
 import com.github.eekidu.dev.devlayout.util.DevLayoutUtil;
 import com.github.eekidu.dev.devlayout.util.DevLayoutUtilKt;
+import com.github.eekidu.dev.devlayout.util.FloatTransformer;
 import com.github.eekidu.dev.devlayout.util.ProxyListener;
 
 /**
@@ -32,7 +33,7 @@ public class SeekBarLayout extends LinearLayout {
 
 
     public interface OnProgressChangeListener {
-        void onProgressChanged(int progress);
+        void onProgressChanged(float progress);
     }
 
     private TextView mTitleTv;
@@ -40,6 +41,7 @@ public class SeekBarLayout extends LinearLayout {
     private SeekBar mSeekBar;
     private Button mMinusBt;
     private Button mPlusBt;
+    private FloatTransformer mTransformer;
 
     private final SeekBar.OnSeekBarChangeListener mInnerListener;
     private SeekBar.OnSeekBarChangeListener mOnSeekBarChangeListener;
@@ -63,13 +65,16 @@ public class SeekBarLayout extends LinearLayout {
 
 
         mSeekBar = new SeekBar(getContext());
+
+        mTransformer = new FloatTransformer();
         mInnerListener = new SeekBar.OnSeekBarChangeListener() {
 
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                mValueTv.setText(String.valueOf(progress) + "/" + seekBar.getMax());
+                mValueTv.setText(mTransformer.project(progress) +
+                        "/" + mTransformer.project(seekBar.getMax()));
                 if (mProgressListener != null) {
-                    mProgressListener.onProgressChanged(progress);
+                    mProgressListener.onProgressChanged(mTransformer.project(progress));
                 }
                 if (mOnSeekBarChangeListener != null) {
                     mOnSeekBarChangeListener.onProgressChanged(seekBar, progress, fromUser);
@@ -108,11 +113,7 @@ public class SeekBarLayout extends LinearLayout {
         mMinusBt.setText("-");
         addView(mMinusBt, new LayoutParams(DevLayoutUtil.dp2px(30), ViewGroup.LayoutParams.WRAP_CONTENT));
         mMinusBt.setOnClickListener(v -> {
-            int min = 0;
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                min = mSeekBar.getMin();
-            }
-            mSeekBar.setProgress(Math.max(mSeekBar.getProgress() - 1, min));
+            mSeekBar.setProgress(Math.max(mSeekBar.getProgress() - 1, mTransformer.getMinInt()));
         });
 
         mPlusBt = new AppCompatButton(getContext());
@@ -120,12 +121,13 @@ public class SeekBarLayout extends LinearLayout {
         mPlusBt.setLayoutParams(new LinearLayout.LayoutParams(DevLayoutUtil.dp2px(30), ViewGroup.LayoutParams.WRAP_CONTENT));
         addView(mPlusBt);
         mPlusBt.setOnClickListener(v -> {
-            mSeekBar.setProgress(Math.min(mSeekBar.getProgress() + 1, mSeekBar.getMax()));
+            mSeekBar.setProgress(Math.min(mSeekBar.getProgress() + 1, mTransformer.getMaxInt()));
         });
 
         setEnableStep(false);
 
-        mValueTv.setText(mSeekBar.getProgress() + "/" + mSeekBar.getMax());
+        mValueTv.setText(mTransformer.project(mSeekBar.getProgress())
+                + "/" + mTransformer.project(mSeekBar.getMax()));
 
         if (isInEditMode()) {
             setBackgroundColor(Color.WHITE);
@@ -150,27 +152,56 @@ public class SeekBarLayout extends LinearLayout {
     }
 
 
-    public SeekBarLayout setMin(int min) {
+    public SeekBarLayout setStep(float step) {
+        mTransformer.setStep(step);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            mSeekBar.setMin(min);
+            mSeekBar.setMin(mTransformer.getMinInt());
+        }
+        mSeekBar.setMax(mTransformer.getMaxInt());
+        return this;
+    }
+
+    public SeekBarLayout setMin(int min) {
+        return this.setMin((float) min);
+
+    }
+
+    public SeekBarLayout setMin(float min) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            mTransformer.setMin(min);
+            mSeekBar.setMin(mTransformer.getMinInt());
+            mSeekBar.setMax(mTransformer.getMaxInt());
         }
         return this;
     }
 
     public SeekBarLayout setMax(int max) {//会触发一次回调
+        return this.setMax((float) max);
+    }
+
+    public SeekBarLayout setMax(float max) {//会触发一次回调
+        mTransformer.setMax(max);
         mSeekBar.setOnSeekBarChangeListener(null);
-        mSeekBar.setMax(max);
+        mSeekBar.setMax(mTransformer.getMaxInt());
         mSeekBar.setOnSeekBarChangeListener(mInnerListener);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            mSeekBar.setMin(mTransformer.getMinInt());
+        }
+
         return this;
     }
 
     public SeekBarLayout setProgress(int progress) {
+        return this.setProgress((float) progress);
+    }
+    public SeekBarLayout setProgress(float progress) {
         if (mSeekBar.getProgress() == progress) {//这种情况不会回调，手动回调
             if (mProgressListener != null) {
-                mProgressListener.onProgressChanged(progress);
+                mProgressListener.onProgressChanged(mTransformer.projectInverse(progress));
             }
         }
-        mSeekBar.setProgress(progress);
+        mSeekBar.setProgress(mTransformer.projectInverse(progress));
         return this;
     }
 
